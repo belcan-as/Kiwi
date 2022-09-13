@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2022 Kaelan Thijs Fouwels <kaelan.thijs@fouwels.com>
+#
+# SPDX-License-Identifier: MIT
+{
+	http_port 80
+	https_port 443
+	acme_ca https://acme-v02.api.letsencrypt.org/directory
+	#acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+	admin off
+}
+oss-pm-a.lagoni.co.uk {
+	#respond "hello-world"
+	
+	route * {
+		#reverse_proxy * https://kiwi-tcms-web-1:8443
+		reverse_proxy {
+			to https://kiwi-tcms-web-1:8443
+			transport http {
+				tls
+				tls_insecure_skip_verify
+				read_buffer 8192
+			}
+		}	
+	}
+
+	
+	log {
+		output stdout
+		format filter {
+			fields {
+				request>headers delete
+				request>tls delete
+				common_log delete
+				resp_headers delete
+			}
+			wrap json
+		}
+		level INFO
+	}
+
+	tls hlam@belcan.com {
+		protocols tls1.3 tls1.3
+		curves x25519
+		key_type rsa4096
+	}
+}

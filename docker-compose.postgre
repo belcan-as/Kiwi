@@ -2,49 +2,42 @@ version: '2'
 
 services:
     db:
-        image: mariadb:10.9.2
-        container_name: kiwi_db
-        command:
-            --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+        #container_name: kiwi_db
+        image: postgres:latest
         volumes:
-            - db_data:/var/lib/mysql
+            - db_data:/var/lib/postgresql/data
         restart: always
         environment:
-            #default credentials
-            #MYSQL_ROOT_PASSWORD: kiwi-1s-aw3s0m3
-            #MYSQL_USER: kiwi
-            #MYSQL_PASSWORD: kiwi
-            MYSQL_ROOT_PASSWORD: ${ROOT_PASSWORD}
-            MYSQL_DATABASE: kiwi
-            MYSQL_USER: ${DB_USER}
-            MYSQL_PASSWORD: ${DB_PASSWORD}
-        networks:
-            db:
+            POSTGRES_DB: kiwi
+            POSTGRES_USER: kiwi
+            POSTGRES_PASSWORD: kiwi
 
     web:
+        #container_name: kiwi_web
         depends_on:
             - db
         restart: always
-        #container_name: kiwi_web
         image: kiwitcms/kiwi:latest
         ports:
             - 8080:8080
             - 8443:8443
         volumes:
             - uploads:/Kiwi/uploads:Z
-        environment:
-            #KIWI_DB_USER: kiwi
-            #KIWI_DB_PASSWORD: kiwi
-            KIWI_DB_HOST: db
-            KIWI_DB_PORT: 3306
-            KIWI_DB_NAME: kiwi
-            KIWI_DB_USER: ${DB_USER}
-            KIWI_DB_PASSWORD: ${DB_PASSWORD}
         networks: 
             web:
-            db:
+        environment:
+            KIWI_DB_ENGINE: django.db.backends.postgresql
+            KIWI_DB_HOST: db
+            KIWI_DB_PORT: 5432
+            KIWI_DB_NAME: kiwi
+            KIWI_DB_USER: kiwi
+            KIWI_DB_PASSWORD: kiwi
+            KIWI_DONT_ENFORCE_HTTPS: "true"
 
     gateway:
+        depends_on:
+            - web
+            - db
         image: caddy:2.4.6-alpine
         restart: unless-stopped
         ports:
@@ -61,13 +54,11 @@ services:
             resources:
                 limits:
                     memory: 2gb
-
 configs:
   gateway_config:
     file: ./config/gateway/Caddyfile
 
 networks:
-    db:
     web:
     gateway:
 
